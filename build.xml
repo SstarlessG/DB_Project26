@@ -312,4 +312,67 @@
     <target name="test-and-handin" depends="test,systemtest,handin"
         description="Run all the tests and system tests; if they succeed, create a tarball of the source code to submit" />
 
+    <!-- Lab 1 tests -->
+    <target name="lab1" depends="testcompile" description="Run Lab 1 tests">
+        <RunJunit>
+            <test name="simpledb.TupleTest"/>
+            <test name="simpledb.TupleDescTest"/>
+            <test name="simpledb.CatalogTest"/>
+            <test name="simpledb.HeapPageIdTest"/>
+            <test name="simpledb.RecordIdTest"/>
+            <test name="simpledb.HeapPageReadTest"/>
+            <test name="simpledb.HeapFileReadTest"/>
+            <test name="simpledb.systemtest.ScanTest"/>
+        </RunJunit>
+    </target>
+
+    <!-- Lab 2 tests -->
+    <target name="lab2" depends="testcompile" description="Run Lab 2 tests">
+        <RunJunit>
+            <test name="simpledb.PredicateTest"/>
+            <test name="simpledb.JoinPredicateTest"/>
+            <test name="simpledb.FilterTest"/>
+            <test name="simpledb.JoinTest"/>
+            <test name="simpledb.IntegerAggregatorTest"/>
+            <test name="simpledb.StringAggregatorTest"/>
+            <test name="simpledb.AggregateTest"/>
+            <test name="simpledb.HeapPageWriteTest"/>
+            <test name="simpledb.HeapFileWriteTest"/>
+            <test name="simpledb.BufferPoolWriteTest"/>
+            <test name="simpledb.InsertTest"/>
+            <test name="simpledb.systemtest.FilterTest"/>
+            <test name="simpledb.systemtest.JoinTest"/>
+            <test name="simpledb.systemtest.AggregateTest"/>
+            <test name="simpledb.systemtest.InsertTest"/>
+            <test name="simpledb.systemtest.DeleteTest"/>
+            <test name="simpledb.systemtest.EvictionTest"/>
+        </RunJunit>
+    </target>
+
+    <!-- Lab 3 tests -->
+    <target name="lab3" depends="testcompile" description="Run Lab 3 tests">
+        <RunJunit>
+            <test name="simpledb.LockingTest"/>
+            <test name="simpledb.TransactionTest"/>
+            <test name="simpledb.DeadlockTest"/>
+            <test name="simpledb.systemtest.AbortEvictionTest"/>
+            <test name="simpledb.systemtest.TransactionTest"/>
+        </RunJunit>
+    </target>
+
+    <!-- Lab 4 tests -->
+    <target name="lab4" depends="testcompile" description="Run Lab 4 tests">
+        <RunJunit>
+            <test name="simpledb.BTreeFileReadTest"/>
+            <test name="simpledb.BTreeFileInsertTest"/>
+            <test name="simpledb.BTreeFileDeleteTest"/>
+            <test name="simpledb.BTreeNextKeyLockingTest"/>
+            <test name="simpledb.BTreeDeadlockTest"/>
+            <test name="simpledb.systemtest.BTreeScanTest"/>
+            <test name="simpledb.systemtest.BTreeFileInsertTest"/>
+            <test name="simpledb.systemtest.BTreeFileDeleteTest"/>
+            <test name="simpledb.systemtest.BTreeTest"/>
+        </RunJunit>
+    </target>
+
 </project>

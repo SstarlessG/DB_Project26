@@ -71,6 +71,10 @@ ant test|Compile and run all the unit tests.
 ant runtest -Dtest=testname|Run the unit test named `testname`.
 ant systemtest|Compile and run all the system tests.
 ant runsystest -Dtest=testname|Compile and run the system test named `testname`.
+ant lab1|Run all Lab 1 unit and system tests.
+ant lab2|Run all Lab 2 unit and system tests.
+ant lab3|Run all Lab 3 unit and system tests.
+ant lab4|Run all Lab 4 unit and system tests.
 
 ### 1.1. Running end-to-end tests
 
