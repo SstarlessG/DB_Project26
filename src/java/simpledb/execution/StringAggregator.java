@@ -1,12 +1,27 @@
 package simpledb.execution;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import simpledb.common.Type;
 import simpledb.storage.Tuple;
+import simpledb.storage.TupleDesc;
+import simpledb.storage.TupleIterator;
+import simpledb.storage.Field;
+import simpledb.storage.IntField;
 
 /**
  * Knows how to compute some aggregate over a set of StringFields.
  */
 public class StringAggregator implements Aggregator {
+
+    private int gbfield;
+    private Type gbfieldtype;
+    private int afield;
+    private Op what;
+
+    private Map<Field, Integer> countMap = new HashMap<>();
 
     private static final long serialVersionUID = 1L;
 
@@ -21,6 +36,14 @@ public class StringAggregator implements Aggregator {
 
     public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
+        if (what != Op.COUNT){
+            throw new IllegalArgumentException("what only supports COUNT!");
+        }
+            
+        this.gbfield = gbfield;
+        this.gbfieldtype = gbfieldtype;
+        this.afield = afield;
+        this.what = what;
     }
 
     /**
@@ -29,6 +52,15 @@ public class StringAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        Field groupkey;
+
+        if (gbfield == NO_GROUPING){
+            groupkey = null;
+        } else {
+            groupkey = tup.getField(gbfield);
+        }
+
+        countMap.put(groupkey, countMap.getOrDefault(groupkey, 0) + 1);
     }
 
     /**
@@ -41,7 +73,28 @@ public class StringAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
-        throw new UnsupportedOperationException("please implement me for lab2");
-    }
+        ArrayList<Tuple> tuples = new ArrayList<>();
+        TupleDesc td;
 
+        if (gbfield == NO_GROUPING){
+            td = new TupleDesc(new Type[]{Type.INT_TYPE});
+        } else {
+            td = new TupleDesc(new Type[]{gbfieldtype, Type.INT_TYPE});
+        }
+
+        for (Map.Entry<Field, Integer> entry: countMap.entrySet()){
+
+            Tuple tuple = new Tuple(td);
+
+            if (gbfield == NO_GROUPING){
+                tuple.setField(0, new IntField(entry.getValue()));
+            } else {
+                tuple.setField(0, entry.getKey());
+                tuple.setField(1, new IntField(entry.getValue()));
+            }
+
+            tuples.add(tuple);
+        }
+        return new TupleIterator(td, tuples);
+    }
 }

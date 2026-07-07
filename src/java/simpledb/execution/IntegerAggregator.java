@@ -1,12 +1,24 @@
 package simpledb.execution;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import simpledb.common.Type;
-import simpledb.storage.Tuple;
+import simpledb.storage.*;
 
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
 public class IntegerAggregator implements Aggregator {
+
+    private int gbfield;
+    private Type gbfieldtype;
+    private int afield;
+    private Op what;
+
+    private Map<Field, Integer> aggregateMap = new HashMap<>();
+    private Map<Field, Integer> countMap = new HashMap<>();
 
     private static final long serialVersionUID = 1L;
 
@@ -27,6 +39,10 @@ public class IntegerAggregator implements Aggregator {
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
+        this.gbfield = gbfield;
+        this.gbfieldtype = gbfieldtype;
+        this.afield = afield;
+        this.what = what;
     }
 
     /**
@@ -38,6 +54,35 @@ public class IntegerAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        Field groupkey = (gbfield == NO_GROUPING) ? null : tup.getField(gbfield);
+        int value = ((IntField) tup.getField(afield)).getValue();
+
+        switch(what){
+            case MIN:
+                aggregateMap.put(groupkey, aggregateMap.containsKey(groupkey) ? Math.min(aggregateMap.get(groupkey), value): value);
+                break;
+
+            case MAX:
+                aggregateMap.put(groupkey, aggregateMap.containsKey(groupkey) ? Math.max(aggregateMap.get(groupkey), value): value);
+                break;
+
+            case SUM:
+                aggregateMap.put(groupkey, aggregateMap.getOrDefault(groupkey, 0) + value);
+                break;
+            
+            case COUNT:
+                aggregateMap.put(groupkey, aggregateMap.getOrDefault(groupkey, 0) + 1);
+                break;
+            
+            case AVG:
+                aggregateMap.put(groupkey, aggregateMap.getOrDefault(groupkey, 0) + value);
+                countMap.put(groupkey, countMap.getOrDefault(groupkey, 0) + 1);
+                break;
+
+            default:
+                throw new UnsupportedOperationException();
+            
+        }
     }
 
     /**
@@ -50,8 +95,33 @@ public class IntegerAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
-        throw new
-        UnsupportedOperationException("please implement me for lab2");
-    }
+        ArrayList<Tuple> tuples = new ArrayList<>();
+        TupleDesc td;
 
+        if (gbfield == NO_GROUPING){
+            td = new TupleDesc(new Type[]{Type.INT_TYPE});
+        } else {
+            td = new TupleDesc(new Type[]{gbfieldtype, Type.INT_TYPE});
+        }
+
+        for (Field groupkey: aggregateMap.keySet()){
+
+            Tuple tuple = new Tuple(td);
+            int result = aggregateMap.get(groupkey);
+
+            if (what == Op.AVG){
+                result = result / countMap.get(groupkey);
+            }
+
+            if (gbfield == NO_GROUPING){
+                tuple.setField(0, new IntField(result));
+            } else {
+                tuple.setField(0, groupkey);
+                tuple.setField(1, new IntField(result));
+            }
+
+            tuples.add(tuple);
+        }
+        return new TupleIterator(td, tuples);
+    }
 }
