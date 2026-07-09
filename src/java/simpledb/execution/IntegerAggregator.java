@@ -104,10 +104,11 @@ public class IntegerAggregator implements Aggregator {
             td = new TupleDesc(new Type[]{gbfieldtype, Type.INT_TYPE});
         }
 
-        for (Field groupkey: aggregateMap.keySet()){
-
+        for (Map.Entry<Field, Integer> entry: aggregateMap.entrySet()){
+            
             Tuple tuple = new Tuple(td);
-            int result = aggregateMap.get(groupkey);
+            Field groupkey = entry.getKey();
+            int result = entry.getValue();
 
             if (what == Op.AVG){
                 result = result / countMap.get(groupkey);
