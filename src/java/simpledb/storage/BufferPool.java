@@ -83,7 +83,7 @@ public class BufferPool {
                 return page;
             }
             if (pages.size() >= numPages) {
-                throw new DbException("Bufferpool is full");
+                evictPage();
             }
             
             DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
@@ -208,6 +208,9 @@ public class BufferPool {
      */
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
+        for (PageId pid : pages.keySet()) {
+            flushPage(pid);
+        }
         // not necessary for lab1
 
     }
@@ -222,6 +225,7 @@ public class BufferPool {
     */
     public synchronized void discardPage(PageId pid) {
         // some code goes here
+        pages.remove(pid);
         // not necessary for lab1
     }
 
@@ -232,6 +236,17 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Page page = pages.get(pid);
+
+        if (page == null) {
+            return;
+        }
+
+        if (page.isDirty() != null) {
+            DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            file.writePage(page);
+            page.markDirty(false, null);
+        }
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -246,6 +261,17 @@ public class BufferPool {
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
     private synchronized  void evictPage() throws DbException {
+        for (PageId pid : pages.keySet()) {
+            try {
+                flushPage(pid);
+                pages.remove(pid);
+                return;
+            } catch (IOException e) {
+                throw new DbException("Could not flush page during eviction");
+            }
+        }
+
+        throw new DbException("No page to evict");
         // some code goes here
         // not necessary for lab1
     }
