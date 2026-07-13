@@ -113,7 +113,6 @@ public class BufferPool {
      * @param tid the ID of the transaction requesting the unlock
      */
     public void transactionComplete(TransactionId tid) {
-        transactionComplete(tid, true);
         // some code goes here
         // not necessary for lab1|lab2
     }
@@ -133,25 +132,8 @@ public class BufferPool {
      * @param commit a flag indicating whether we should commit or abort
      */
     public void transactionComplete(TransactionId tid, boolean commit) {
-        try {
-            if (commit){
-                flushPages(tid);
-            } else {
-                for (PageId pid : pages.keySet()){
-                    Page page = pages.get(pid);
-                    if (page != null && tid.equals(page.isDirty())) {
-                        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-                        pages.put(pid, file.readPage(pid));
-                        
-                    }
-                }
-            }
-
         // some code goes here
         // not necessary for lab1|lab2
-    } catch (IOException e) {
-        throw new RuntimeException(e);
-    }
     }
 
     /**
@@ -270,13 +252,6 @@ public class BufferPool {
     /** Write all pages of the specified transaction to disk.
      */
     public synchronized  void flushPages(TransactionId tid) throws IOException {
-        for (PageId pid : pages.keySet()){
-            Page page = pages.get(pid);
-            if (page != null && tid.equals(page.isDirty())) {
-                flushPage(pid);
-                page.setBeforeImage();
-            }
-        }
         // some code goes here
         // not necessary for lab1|lab2
     }
@@ -287,14 +262,16 @@ public class BufferPool {
      */
     private synchronized  void evictPage() throws DbException {
         for (PageId pid : pages.keySet()) {
-         Page page = pages.get(pid);
-         if (page != null && page.isDirty() == null) {
-             pages.remove(pid);
-             return;
-         }
+            try {
+                flushPage(pid);
+                pages.remove(pid);
+                return;
+            } catch (IOException e) {
+                throw new DbException("Could not flush page during eviction");
+            }
         }
 
-        throw new DbException("All pages are dirty, cannot evict any page.");
+        throw new DbException("No page to evict");
         // some code goes here
         // not necessary for lab1
     }
