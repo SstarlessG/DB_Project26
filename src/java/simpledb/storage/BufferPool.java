@@ -36,6 +36,8 @@ public class BufferPool {
     private final int numPages;
     private final ConcurrentHashMap<PageId, Page> pages;
 
+    private final LockManager lockManager;
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -44,6 +46,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         this.numPages = numPages;
         this.pages = new ConcurrentHashMap<>();
+        this.lockManager = new LockManager();
         // some code goes here
     }
     
@@ -78,7 +81,11 @@ public class BufferPool {
      */
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
+            
+            lockManager.acquireLock(tid, pid, perm);
+            
             Page page = pages.get(pid);
+
             if (page != null) {
                 return page;
             }
@@ -105,6 +112,7 @@ public class BufferPool {
     public  void unsafeReleasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
+        lockManager.releaseLock(tid, pid);
     }
 
     /**
@@ -115,13 +123,14 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) {
         // some code goes here
         // not necessary for lab1|lab2
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
-    public boolean holdsLock(TransactionId tid, PageId p) {
+    public boolean holdsLock(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
-        return false;
+        return lockManager.holdsLock(tid, pid);
     }
 
     /**
@@ -134,6 +143,23 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid, boolean commit) {
         // some code goes here
         // not necessary for lab1|lab2
+        try{        
+            if (commit){
+                flushPages(tid);
+            } else {
+                for (PageId pid: pages.keySet()){
+                    Page page = pages.get(pid);
+
+                    if (page.isDirty() != null && page.isDirty().equals(tid)){
+                    discardPage(pid);
+                    }
+                }
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+        lockManager.releaseAllLocks(tid);
     }
 
     /**
@@ -182,7 +208,7 @@ public class BufferPool {
      * @param tid the transaction deleting the tuple.
      * @param t the tuple to delete
      */
-    public  void deleteTuple(TransactionId tid, Tuple t)
+    public void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
@@ -233,7 +259,7 @@ public class BufferPool {
      * Flushes a certain page to disk
      * @param pid an ID indicating the page to flush
      */
-    private synchronized  void flushPage(PageId pid) throws IOException {
+    private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
         Page page = pages.get(pid);
@@ -260,7 +286,7 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
+    private synchronized void evictPage() throws DbException {
         for (PageId pid : pages.keySet()) {
             try {
                 flushPage(pid);
