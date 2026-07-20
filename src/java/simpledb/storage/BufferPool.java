@@ -156,11 +156,10 @@ public class BufferPool {
                 }
             }
         } catch (IOException e){
-            e.printStackTrace();
+            throw new RuntimeException("Could not complete transaction", e);
         } finally {
             lockManager.releaseAllLocks(tid);
         }
-
     }
 
     /**
@@ -279,6 +278,12 @@ public class BufferPool {
     /** Write all pages of the specified transaction to disk.
      */
     public synchronized  void flushPages(TransactionId tid) throws IOException {
+        for (PageId pid : pages.keySet()){
+            Page page = pages.get(pid);
+            if (page != null && tid.equals(page.isDirty())){
+                flushPage(pid);
+            }
+        }
         // some code goes here
         // not necessary for lab1|lab2
     }
@@ -289,16 +294,15 @@ public class BufferPool {
      */
     private synchronized void evictPage() throws DbException {
         for (PageId pid : pages.keySet()) {
-            try {
-                flushPage(pid);
-                pages.remove(pid);
-                return;
-            } catch (IOException e) {
-                throw new DbException("Could not flush page during eviction");
+                Page page = pages.get(pid);
+                if (page !=  null && page.isDirty() == null){
+                    pages.remove(pid);
+                    return;
+                }
             }
-        }
+        
 
-        throw new DbException("No page to evict");
+        throw new DbException("All pages are dirty, cannot evict any page");
         // some code goes here
         // not necessary for lab1
     }
