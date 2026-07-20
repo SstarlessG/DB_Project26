@@ -157,9 +157,10 @@ public class BufferPool {
             }
         } catch (IOException e){
             e.printStackTrace();
+        } finally {
+            lockManager.releaseAllLocks(tid);
         }
 
-        lockManager.releaseAllLocks(tid);
     }
 
     /**

@@ -47,7 +47,7 @@ public class LockManager {
 
         }
 
-        /*Gain exclusiveLock if not in exclusiveLock or sharedLock*/
+        /*Gain exclusiveLock if not in exclusiveLock or upgrading from sharedLock to exclusiveLock*/
         if (perm == Permissions.READ_WRITE){
             while(lock.exclusiveLock != null && !lock.exclusiveLock.equals(tid) || (!lock.sharedLock.isEmpty() && !(lock.sharedLock.size() == 1 && lock.sharedLock.contains(tid)))){
                 try{
@@ -79,7 +79,7 @@ public class LockManager {
         notifyAll();
     }
 
-    /*Checks if a page is currently holding onto a lock*/
+    /*Checks if a page is currently holding onto any kind of lock*/
     public synchronized boolean holdsLock(TransactionId tid, PageId pid){
         Lock lock = lockTable.get(pid);
 
