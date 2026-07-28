@@ -188,7 +188,40 @@ public class BTreeFile implements DbFile {
                                        Field f)
 					throws DbException, TransactionAbortedException {
 		// some code goes here
-        return null;
+
+		//Base case where pid.pgcateg() = BTreePageId.LEAF
+		if (pid.pgcateg() == BTreePageId.LEAF){
+			return (BTreeLeafPage) getPage(tid, dirtypages, pid, perm);
+		}
+
+		//Current internal page with READ_ONLY perms
+		BTreeInternalPage page = (BTreeInternalPage) getPage(tid, dirtypages, pid, Permissions.READ_ONLY);
+
+		//Iterator for entries in page
+		Iterator<BTreeEntry> iterator = page.iterator();
+
+		//Recursion on left most child to find left-most leaf page
+		if (f == null){
+			BTreeEntry first = iterator.next();
+			return findLeafPage(tid, dirtypages, first.getLeftChild(), perm, null);
+		}
+
+		//Temp Holder for Most Right Page
+		BTreePageId mostRightChild = null;
+
+		//Iterate through all current entries in the iterator to find matching entry
+		while (iterator.hasNext()){
+			BTreeEntry entry = iterator.next();
+			mostRightChild = entry.getRightChild();
+
+			//Move left if key <= entry key
+			if (f.compare(Op.LESS_THAN_OR_EQ, entry.getKey())){
+				return findLeafPage(tid, dirtypages, entry.getLeftChild(), perm, f);
+			}
+		}
+
+		//Larger than all other keys, go to most right child
+        return findLeafPage(tid, dirtypages, mostRightChild, perm, f);
 	}
 	
 	/**
