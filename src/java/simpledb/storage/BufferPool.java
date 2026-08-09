@@ -143,19 +143,17 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid, boolean commit) {
         // some code goes here
         // not necessary for lab1|lab2
-        try{        
-            if (commit){
+        try {
+            if (commit) {
                 flushPages(tid);
             } else {
-                for (PageId pid: pages.keySet()){
-                    Page page = pages.get(pid);
-
-                    if (page.isDirty() != null && page.isDirty().equals(tid)){
-                    discardPage(pid);
+                for (PageId pid : pages.keySet()) {
+                    if (holdsLock(tid, pid)) {
+                        discardPage(pid);
                     }
                 }
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException("Could not complete transaction", e);
         } finally {
             lockManager.releaseAllLocks(tid);
